@@ -73,10 +73,52 @@ superposition:
 ```
 H = 1/√2 * [1   1]
            [1  -1]
+```
 
+To see what `H` actually does to a state, it helps to spell out the
+matrix-vector multiplication instead of skipping to the answer. Recall
+`|0⟩ = [1,0]ᵀ` and `|1⟩ = [0,1]ᵀ`. Multiplying a 2×2 matrix by a 2×1
+column vector works by taking the dot product of each *row* of the
+matrix with the vector:
+
+```
+[a  b] [x]   [a·x + b·y]
+[c  d] [y] = [c·x + d·y]
+```
+
+**`H|0⟩`:** plug in `[x,y] = [1,0]`:
+
+```
+H|0⟩ = 1/√2 [1   1] [1]   = 1/√2 [1·1 + 1·0]   = 1/√2 [1]
+            [1  -1] [0]          [1·1 + (-1)·0]        [1]
+```
+
+The result is the column vector `1/√2·[1,1]ᵀ`. Converting back to ket
+notation — since `[1,1]ᵀ = [1,0]ᵀ + [0,1]ᵀ = |0⟩ + |1⟩` — that's:
+
+```
 H|0⟩ = 1/√2 (|0⟩ + |1⟩)   =: |+⟩
+```
+
+**`H|1⟩`:** plug in `[x,y] = [0,1]`:
+
+```
+H|1⟩ = 1/√2 [1   1] [0]   = 1/√2 [1·0 + 1·1]   = 1/√2 [ 1]
+            [1  -1] [1]          [1·0 + (-1)·1]        [-1]
+```
+
+so `[1,-1]ᵀ = [1,0]ᵀ - [0,1]ᵀ = |0⟩ - |1⟩`, giving:
+
+```
 H|1⟩ = 1/√2 (|0⟩ - |1⟩)   =: |−⟩
 ```
+
+The `-1` in `H`'s bottom-right entry is exactly what flips that second
+term's sign when the input is `|1⟩` instead of `|0⟩`. More generally,
+`H`'s *first column* `[1,1]ᵀ/√2` is `H|0⟩` and its *second column*
+`[1,-1]ᵀ/√2` is `H|1⟩` — for any matrix `U`, `U|0⟩` and `U|1⟩` just
+read off `U`'s columns, since `|0⟩` and `|1⟩` pick out one column each
+via the dot products above.
 
 **CNOT gate (Controlled-NOT)** — acts on two qubits. It flips the
 *target* qubit if and only if the *control* qubit is `|1⟩`, and leaves
