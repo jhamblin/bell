@@ -156,7 +156,15 @@ CNOT [1/√2 (|00⟩ + |10⟩)]
   = 1/√2 (|00⟩ + |11⟩)
 ```
 
-That final state is the Bell state `|Φ+⟩`:
+That final state is called the Bell state `|Φ+⟩`. The name is just a
+label, not something computed from the math — physicists conventionally
+call two of the four Bell states `Φ` ("phi") and the other two `Ψ`
+("psi"), distinguishing which pair of basis kets appears inside
+(`|00⟩,|11⟩` vs. `|01⟩,|10⟩`). The `+`/`−` superscript, unlike the
+letter, *does* carry meaning: it's the sign on the relative phase
+between the two terms — `+` for `|00⟩ + |11⟩`, `−` for `|00⟩ − |11⟩`.
+Section 1.5 below lists all four names side by side, which makes the
+`Φ`/`Ψ` vs. `+`/`−` pattern easier to see:
 
 ```
 |Φ+⟩ = 1/√2 (|00⟩ + |11⟩) = 1/√2 [1, 0, 0, 1]ᵀ
