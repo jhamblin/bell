@@ -163,7 +163,7 @@ call two of the four Bell states `Φ` ("phi") and the other two `Ψ`
 (`|00⟩,|11⟩` vs. `|01⟩,|10⟩`). The `+`/`−` superscript, unlike the
 letter, *does* carry meaning: it's the sign on the relative phase
 between the two terms — `+` for `|00⟩ + |11⟩`, `−` for `|00⟩ − |11⟩`.
-Section 1.5 below lists all four names side by side, which makes the
+Section 1.6 below lists all four names side by side, which makes the
 `Φ`/`Ψ` vs. `+`/`−` pattern easier to see:
 
 ```
@@ -184,7 +184,77 @@ should therefore produce only `00` and `11` outcomes, each roughly
 half the time, and *never* `01` or `10`. That's the signature you'll
 see in the output of this script, and it's the experiment being run.
 
-### 1.5 The other three Bell states
+### 1.5 Product states vs. entangled states: why the correlation happens
+
+Section 1.2 introduced `⊗` for *combining* two independent qubits into
+one joint description. It's worth spelling out what that buys you,
+because the Bell state's correlated-measurement behavior falls
+straight out of the difference between "joint states built from `⊗`"
+and "joint states that can't be built from `⊗`."
+
+**The measurement rule.** For any two-qubit state written as
+`c₀₀|00⟩ + c₀₁|01⟩ + c₁₀|10⟩ + c₁₁|11⟩`, measuring qubit 0 gives `0`
+with probability `|c₀₀|² + |c₀₁|²` (sum the squared weights of every
+term whose *first* digit is `0`; symmetric for outcome `1`). Given
+that outcome, the state **collapses**: discard every term that
+doesn't match the digit you measured, then rescale the survivors so
+their probabilities sum back to 1. This rule applies to *any*
+two-qubit state — the question is just what it does to each kind.
+
+**Case A — a product state (built with `⊗`), no correlation.**
+Take two qubits independently prepared as `|+⟩ ⊗ |+⟩`, i.e. each one
+individually `1/√2(|0⟩+|1⟩)`. Expanding the tensor product (§1.2's
+rule):
+
+```
+|+⟩ ⊗ |+⟩ = 1/2 (|00⟩ + |01⟩ + |10⟩ + |11⟩)
+```
+
+Measure qubit 0. `P(0) = |1/2|² + |1/2|² = 1/2`. Keep the two terms
+starting with `0` and rescale (divide by `√(1/2)`):
+
+```
+1/2|00⟩ + 1/2|01⟩   →   1/√2 (|00⟩ + |01⟩) = |0⟩ ⊗ |+⟩
+```
+
+Qubit 1 is left in `|+⟩` — and if you'd measured `1` for qubit 0
+instead, the same rescaling gives `|1⟩ ⊗ |+⟩`: qubit 1 is *still*
+`|+⟩`. **Qubit 0's outcome tells you nothing about qubit 1** — exactly
+what "independent" should mean, and exactly what building the state
+from `⊗` guarantees.
+
+**Case B — the Bell state (not built with `⊗`), full correlation.**
+Now apply the identical measurement rule to
+`|Φ+⟩ = 1/√2|00⟩ + 0|01⟩ + 0|10⟩ + 1/√2|11⟩`:
+
+- Measure `0`: `P = |1/√2|² + 0 = 1/2`. The only surviving term is
+  `1/√2|00⟩`; rescaling gives `|00⟩ = |0⟩ ⊗ |0⟩` — i.e. qubit 1 is now
+  `|0⟩`, deterministically.
+- Measure `1`: `P = 1/2`. The only surviving term is `1/√2|11⟩`;
+  rescaling gives `|11⟩` — qubit 1 is now `|1⟩`, deterministically.
+
+Unlike Case A, qubit 1's resulting state **depends on which outcome
+you got** for qubit 0 — `|0⟩` after one outcome, `|1⟩` after the
+other. That dependence is precisely "whichever you get, qubit 1 is
+now guaranteed to collapse to the same value."
+
+**Why this connects back to `⊗`.** Case A worked because `|+⟩⊗|+⟩`
+*is* a tensor product of two single-qubit kets, so each qubit carries
+its own independent description throughout. The claim "neither qubit
+has a well-defined state on its own" is the claim that `|Φ+⟩` has
+*no* such decomposition — check it algebraically by trying to solve
+`(α|0⟩+β|1⟩) ⊗ (γ|0⟩+δ|1⟩) = 1/√2(|00⟩+|11⟩)` for `α,β,γ,δ`.
+Expanding the left side and matching coefficients term-by-term gives
+four equations: `αγ = 1/√2`, `αδ = 0`, `βγ = 0`, `βδ = 1/√2`. From
+`αδ=0`, either `α=0` or `δ=0`. If `α=0` then `αγ=0`, contradicting
+`αγ=1/√2`. If `δ=0` then `βδ=0`, contradicting `βδ=1/√2`. Either way,
+contradiction — **no `α,β,γ,δ` satisfies all four equations
+simultaneously.** There is no single-qubit ket you can assign to
+qubit 0 (or qubit 1) that reproduces `|Φ+⟩` when combined with `⊗`.
+That's what makes it entangled, and it's *why* Case B's measurement
+outcomes are correlated instead of independent.
+
+### 1.6 The other three Bell states
 
 `|Φ+⟩` is one of four maximally-entangled two-qubit states that form
 the **Bell basis**:
