@@ -297,6 +297,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### 3.1 Running the tests
+
+[`test_bell_state.py`](test_bell_state.py) checks the circuit's exact
+state vector against §1.4's math, that real runs only ever measure
+`00`/`11` (never `01`/`10`), `get_device()`'s ARN selection, and
+`wait_for_result()`'s task-ID-printing and cancel-on-interrupt
+behavior. Runs entirely on the local simulator; no AWS credentials
+needed.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
 ## 4. Running locally (no AWS account needed)
 
 The default device is Braket's built-in local simulator, which runs
