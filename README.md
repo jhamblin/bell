@@ -283,7 +283,9 @@ circuit = Circuit().h(0).cnot(control=0, target=1)
 
 and then submits it to whichever device you choose via `device.run(circuit,
 shots=...)`, printing the resulting measurement-count histogram (e.g.
-`{'00': 512, '11': 488}`).
+`{'00': 512, '11': 488}`). The submitted task is handed to
+`wait_for_result()`, which prints the task's ID before waiting and
+cancels it on AWS if the wait is interrupted — see §5.3.
 
 ## 3. Setup
 
@@ -362,11 +364,29 @@ for current ARNs. Note that real hardware is noisy, so expect some
 physical error, not a bug.
 
 ```bash
-python bell_state.py --device qpu --qpu-arn "arn:aws:braket:us-east-1::device/qpu/ionq/Aria-1" --shots 100
+python bell_state.py --device qpu --qpu-arn "arn:aws:braket:us-east-1::device/qpu/ionq/Forte-1" --shots 100
 ```
 
 **QPU tasks cost real money per-shot and are billed even if you only
-run a few shots — check current pricing before submitting.**
+run a few shots — check current pricing before submitting.** QPU
+devices are also shared, on-demand infrastructure with limited daily
+availability windows, so a real-hardware run can sit queued for a
+while before it executes — that queueing, not the circuit itself, is
+almost always what makes a QPU run feel slow compared to the
+simulators above.
+
+**Interrupting a run (Ctrl-C):** the script prints the submitted
+task's ID (its full ARN, on AWS) before waiting for a result, and
+cancels that task if you interrupt the wait. Two things worth knowing
+about this: Ctrl-C only stops *this local script* from waiting —
+without the explicit cancel, the task would keep running (and billing)
+on AWS regardless of whether anything is still watching it — and even
+with the cancel request, AWS cancels QPU tasks on a **best-effort**
+basis, so a task that's already started actually running on the
+device may complete (and be billed) anyway. The printed task ID is
+also useful on its own: if you lose the terminal entirely, you can
+still look that task up in the Braket console or cancel it manually
+with `aws braket cancel-quantum-task --quantum-task-arn <id>`.
 
 ## 6. Interpreting the results
 

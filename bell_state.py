@@ -40,6 +40,35 @@ def get_device(name: str, qpu_arn: Optional[str]):
     return AwsDevice(MANAGED_SIMULATORS[name])
 
 
+def wait_for_result(task):
+    """Wait for a submitted quantum task's result, printing its ID so it
+    can be found or cancelled manually (e.g. via the Braket console or
+    `aws braket cancel-quantum-task`) even if this script is interrupted.
+
+    Ctrl-C only stops this local process from waiting -- the task keeps
+    running on AWS regardless. On KeyboardInterrupt, this requests
+    cancellation of the task itself, but AWS cancels QPU tasks on a
+    best-effort basis: once a task has started actually running on the
+    device (as opposed to still queued), cancellation can fail and the
+    task -- and its cost -- completes anyway.
+    """
+    print(f"Task ID: {task.id}")
+    try:
+        return task.result()
+    except KeyboardInterrupt:
+        print("\nInterrupted -- requesting cancellation on AWS...")
+        try:
+            task.cancel()
+            print(
+                f"Cancellation requested for {task.id}. If the task had "
+                "already started running, it may complete (and be billed) "
+                "anyway -- check its status in the Braket console."
+            )
+        except Exception as e:
+            print(f"Could not cancel: {e}")
+        raise SystemExit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -67,7 +96,8 @@ def main() -> None:
     device = get_device(args.device, args.qpu_arn)
     print(f"Running on {device}...")
 
-    result = device.run(circuit, shots=args.shots).result()
+    task = device.run(circuit, shots=args.shots)
+    result = wait_for_result(task)
     counts = result.measurement_counts
 
     print("\nMeasurement counts:")
