@@ -144,6 +144,25 @@ def test_wait_for_result_reports_but_does_not_raise_if_cancel_itself_fails():
         bs.wait_for_result(FakeTask())
 
 
+def test_wait_for_result_raises_clearly_on_failed_task():
+    """Regression test: task.result() returns None (not an exception) when
+    a task fails -- e.g. a real QPU's compiler rejecting a circuit -- and
+    the old code let that propagate into a confusing AttributeError on
+    result.measurement_counts instead of a clear message."""
+
+    class FakeTask:
+        id = "fake-id"
+
+        def result(self):
+            return None
+
+        def state(self):
+            return "FAILED"
+
+    with pytest.raises(SystemExit, match="FAILED"):
+        bs.wait_for_result(FakeTask())
+
+
 # --- CLI smoke test ----------------------------------------------------
 
 
