@@ -29,7 +29,7 @@ A general qubit state is a superposition:
 
 ```
 |ψ⟩ = α|0⟩ + β|1⟩ = [α]
-                     [β]
+                    [β]
 ```
 
 where `α, β ∈ ℂ` and `|α|² + |β|² = 1` (probabilities must sum to 1).
