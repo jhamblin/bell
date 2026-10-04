@@ -175,9 +175,31 @@ with 50/50 probability — but whichever you get, qubit 1 is now
 *guaranteed* to collapse to the same value. Neither qubit has a
 well-defined state on its own beforehand; only the pair does. No
 combination of independent single-qubit states `(α|0⟩+β|1⟩)⊗(γ|0⟩+δ|1⟩)`
-can produce `1/√2(|00⟩+|11⟩)` — try multiplying it out and you'll find
-there's no `α,β,γ,δ` that works, which is the algebraic definition of
-entanglement.
+can produce `1/√2(|00⟩+|11⟩)` — here's the algebra, rather than just
+asserting it. Expand the left side using §1.2's tensor-product rule:
+
+```
+(α|0⟩+β|1⟩) ⊗ (γ|0⟩+δ|1⟩) = αγ|00⟩ + αδ|01⟩ + βγ|10⟩ + βδ|11⟩
+```
+
+For this to equal `1/√2|00⟩ + 0|01⟩ + 0|10⟩ + 1/√2|11⟩`, the
+coefficients must match term by term, giving four simultaneous
+equations:
+
+```
+αγ = 1/√2
+αδ = 0
+βγ = 0
+βδ = 1/√2
+```
+
+From `αδ = 0`, either `α = 0` or `δ = 0`. If `α = 0`, then `αγ = 0`,
+contradicting `αγ = 1/√2`. If instead `δ = 0`, then `βδ = 0`,
+contradicting `βδ = 1/√2`. Both branches are contradictions, so **no**
+`α, β, γ, δ` satisfies all four equations at once — `|Φ+⟩` has no
+single-qubit decomposition. That's the algebraic definition of
+entanglement (§1.5 works through what it means for measurement
+correlations).
 
 Running the circuit many times ("shots") and measuring both qubits
 should therefore produce only `00` and `11` outcomes, each roughly
@@ -242,17 +264,12 @@ now guaranteed to collapse to the same value."
 *is* a tensor product of two single-qubit kets, so each qubit carries
 its own independent description throughout. The claim "neither qubit
 has a well-defined state on its own" is the claim that `|Φ+⟩` has
-*no* such decomposition — check it algebraically by trying to solve
-`(α|0⟩+β|1⟩) ⊗ (γ|0⟩+δ|1⟩) = 1/√2(|00⟩+|11⟩)` for `α,β,γ,δ`.
-Expanding the left side and matching coefficients term-by-term gives
-four equations: `αγ = 1/√2`, `αδ = 0`, `βγ = 0`, `βδ = 1/√2`. From
-`αδ=0`, either `α=0` or `δ=0`. If `α=0` then `αγ=0`, contradicting
-`αγ=1/√2`. If `δ=0` then `βδ=0`, contradicting `βδ=1/√2`. Either way,
-contradiction — **no `α,β,γ,δ` satisfies all four equations
-simultaneously.** There is no single-qubit ket you can assign to
-qubit 0 (or qubit 1) that reproduces `|Φ+⟩` when combined with `⊗`.
-That's what makes it entangled, and it's *why* Case B's measurement
-outcomes are correlated instead of independent.
+*no* such decomposition — §1.4 already worked through the algebra
+showing exactly that: there's no `α,β,γ,δ` for which
+`(α|0⟩+β|1⟩)⊗(γ|0⟩+δ|1⟩) = 1/√2(|00⟩+|11⟩)`. There is no single-qubit
+ket you can assign to qubit 0 (or qubit 1) that reproduces `|Φ+⟩` when
+combined with `⊗`. That's what makes it entangled, and it's *why*
+Case B's measurement outcomes are correlated instead of independent.
 
 ### 1.6 The other three Bell states
 
