@@ -96,6 +96,94 @@ def test_get_device_qpu_passes_through_the_given_arn(monkeypatch):
     assert captured["arn"] == "arn:aws:braket:us-east-1::device/qpu/ionq/Forte-1"
 
 
+# --- format_shot_outcomes / print_task_details / save_raw_results ---------
+
+
+def test_format_shot_outcomes_matches_measurement_counts():
+    """Per-shot bitstrings should tally up to the same aggregated counts
+    `measurement_counts` reports."""
+    circuit = bs.build_bell_circuit()
+    result = LocalSimulator().run(circuit, shots=200).result()
+
+    outcomes = bs.format_shot_outcomes(result)
+    assert len(outcomes) == 200
+    assert set(outcomes) <= {"00", "11"}
+
+    from collections import Counter
+
+    assert Counter(outcomes) == result.measurement_counts
+
+
+def test_print_task_details_notes_untracked_metadata_for_local_runs(capsys):
+    """The local simulator's task has no AWS-tracked metadata (task.metadata()
+    returns None) -- this should be reported clearly, not raise."""
+    circuit = bs.build_bell_circuit()
+    task = LocalSimulator().run(circuit, shots=10)
+    result = task.result()
+
+    bs.print_task_details(task, result)
+    out = capsys.readouterr().out
+    assert "not tracked for the local simulator" in out
+
+
+def test_print_task_details_prints_metadata_and_provider_fields(capsys):
+    class FakeAdditionalMetadata:
+        simulatorMetadata = "sim-meta"
+        ionqMetadata = None
+        rigettiMetadata = None
+        oqcMetadata = None
+        iqmMetadata = None
+        xanaduMetadata = None
+        queraMetadata = None
+        dwaveMetadata = None
+
+    class FakeResult:
+        additional_metadata = FakeAdditionalMetadata()
+
+    class FakeTask:
+        def metadata(self):
+            return {"status": "COMPLETED", "shots": 100, "deviceArn": "arn:fake"}
+
+    bs.print_task_details(FakeTask(), FakeResult())
+    out = capsys.readouterr().out
+    assert "status: COMPLETED" in out
+    assert "deviceArn: arn:fake" in out
+    assert "simulatorMetadata: sim-meta" in out
+
+
+def test_save_raw_results_downloads_from_the_tasks_s3_location(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakeBody:
+        def read(self):
+            return b'{"fake": "results"}'
+
+    class FakeS3Client:
+        def get_object(self, Bucket, Key):
+            captured["bucket"] = Bucket
+            captured["key"] = Key
+            return {"Body": FakeBody()}
+
+    class FakeBoto3:
+        def client(self, name):
+            assert name == "s3"
+            return FakeS3Client()
+
+    import sys
+
+    monkeypatch.setitem(sys.modules, "boto3", FakeBoto3())
+
+    class FakeTask:
+        def metadata(self):
+            return {"outputS3Bucket": "my-bucket", "outputS3Directory": "tasks/abc"}
+
+    path = tmp_path / "results.json"
+    bs.save_raw_results(FakeTask(), str(path))
+
+    assert captured == {"bucket": "my-bucket", "key": "tasks/abc/results.json"}
+    assert path.read_bytes() == b'{"fake": "results"}'
+
+
 # --- wait_for_result: task ID printing and Ctrl-C handling -----------------
 
 
@@ -180,3 +268,45 @@ def test_cli_runs_end_to_end():
     )
     assert result.returncode == 0, result.stderr
     assert "Measurement counts" in result.stdout
+
+
+def test_cli_verbose_prints_per_shot_outcomes_and_task_metadata():
+    import os
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "bell_state.py", "--shots", "20", "--verbose"],
+        cwd=os.path.dirname(os.path.abspath(__file__)) or ".",
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Per-shot outcomes:" in result.stdout
+    assert "shot 0:" in result.stdout
+    assert "shot 19:" in result.stdout
+    assert "Task metadata:" in result.stdout
+
+
+def test_cli_save_raw_results_rejected_for_local_device():
+    import os
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "bell_state.py",
+            "--shots",
+            "10",
+            "--save-raw-results",
+            "/tmp/should-not-be-written.json",
+        ],
+        cwd=os.path.dirname(os.path.abspath(__file__)) or ".",
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode != 0
+    assert "requires an AWS-backed device" in result.stderr

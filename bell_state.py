@@ -25,6 +25,58 @@ def build_bell_circuit() -> Circuit:
     return Circuit().h(0).cnot(control=0, target=1)
 
 
+def format_shot_outcomes(result) -> list:
+    """Return each shot's measured bitstring, in shot order (as opposed to
+    `measurement_counts`, which only gives the aggregated totals)."""
+    return ["".join(str(bit) for bit in shot) for shot in result.measurements]
+
+
+def print_task_details(task, result) -> None:
+    """Print task metadata and device-specific fields from the raw
+    results.json that aren't reflected in the measurement counts, e.g.
+    execution timestamps and per-provider fields like IonQ's
+    sharpened-probabilities flag."""
+    metadata = task.metadata() or {}
+    print("\nTask metadata:")
+    printed_any = False
+    for key in ("status", "shots", "deviceArn", "createdAt", "endedAt"):
+        if key in metadata:
+            print(f"  {key}: {metadata[key]}")
+            printed_any = True
+    if not printed_any:
+        print("  (not tracked for the local simulator)")
+
+    additional = result.additional_metadata
+    for field in (
+        "simulatorMetadata",
+        "ionqMetadata",
+        "rigettiMetadata",
+        "oqcMetadata",
+        "iqmMetadata",
+        "xanaduMetadata",
+        "queraMetadata",
+        "dwaveMetadata",
+    ):
+        value = getattr(additional, field, None)
+        if value is not None:
+            print(f"  {field}: {value}")
+
+
+def save_raw_results(task, path: str) -> None:
+    """Download the raw results.json this task's result was parsed from and
+    save it to `path`. Only applies to AWS-backed devices -- the local
+    simulator has no S3-stored results.json."""
+    import boto3
+
+    metadata = task.metadata()
+    bucket = metadata["outputS3Bucket"]
+    key = f"{metadata['outputS3Directory']}/results.json"
+    body = boto3.client("s3").get_object(Bucket=bucket, Key=key)["Body"].read()
+    with open(path, "wb") as f:
+        f.write(body)
+    print(f"\nSaved raw results.json ({len(body)} bytes) to {path}")
+
+
 def get_device(name: str, qpu_arn: Optional[str]):
     if name == "local":
         return LocalSimulator()
@@ -98,7 +150,29 @@ def main() -> None:
     parser.add_argument(
         "--shots", type=int, default=1000, help="Number of measurement shots."
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Also print each shot's individual outcome and task metadata "
+        "(execution timestamps, device-specific fields) beyond the "
+        "aggregated measurement counts.",
+    )
+    parser.add_argument(
+        "--save-raw-results",
+        metavar="PATH",
+        default=None,
+        help="Save the raw results.json this task's result was parsed from "
+        "to PATH. Only applies to AWS-backed devices (sv1/dm1/tn1/qpu) -- "
+        "the local simulator has no S3-stored results.json.",
+    )
     args = parser.parse_args()
+
+    if args.save_raw_results and args.device == "local":
+        raise SystemExit(
+            "--save-raw-results requires an AWS-backed device "
+            "(sv1/dm1/tn1/qpu) -- the local simulator has no S3-stored "
+            "results.json."
+        )
 
     circuit = build_bell_circuit()
     print("Circuit:")
@@ -115,6 +189,15 @@ def main() -> None:
     print("\nMeasurement counts:")
     for bitstring, count in sorted(counts.items()):
         print(f"  {bitstring}: {count}")
+
+    if args.verbose:
+        print("\nPer-shot outcomes:")
+        for i, bitstring in enumerate(format_shot_outcomes(result)):
+            print(f"  shot {i}: {bitstring}")
+        print_task_details(task, result)
+
+    if args.save_raw_results:
+        save_raw_results(task, args.save_raw_results)
 
 
 if __name__ == "__main__":
